@@ -1,0 +1,184 @@
+---
+title: "Homework 2"
+author: "Uliana Plotnikova"
+date: "September 8, 2019"
+output: html_document
+---
+
+
+###Assignment - SQL a nd R
+
+#### Choose six recent popular movies. Ask at least five people that you know (friends, family, classmates, imaginary friends) to rate each of these movie that they have seen on a scale of 1 to 5. Take the results (observations) and store them in a SQL database. Load the information into an R dataframe. Your deliverables should include your SQL scripts and your R Markdown code, posted to GitHub. This is by design a very open ended assignment. A variety of reasonable approaches are acceptable. You can (and should) blank out your SQL password if your solution requires it; otherwise, full credit requires that your code is "reproducible," with the assumption that I have the same database server and R software.
+
+
+```{r}
+library (knitr)
+library(ggplot2)
+library (RPostgreSQL)
+conn <- dbConnect(
+  dbDriver('PostgreSQL'),
+  dbname = 'postgres',
+  host = 'localhost',
+  port = 5432,
+  user = 'postgres',
+  password = 'Ylua4786'
+)
+
+
+```
+
+
+ 
+
+
+#### Take the results from survey and store them in a SQL database.
+
+#### SQL code
+
+```{r}
+table1<-dbGetQuery(conn, 'CREATE TABLE sandbox.movie (
+movie_id INT PRIMARY KEY,
+movie_name VARCHAR(255) NOT NULL'
+);
+
+```
+
+```{r}
+data1<-dbGetQuery(conn,'INSERT INTO sandbox.movie (movie_id, movie_name)
+VALUES
+(1, "Avengers:Endgame"),
+(2, "X-Men: Dark Phenix"),
+(3, "Captain Marvel"),
+(4, "Terminator: Dark Fate"),
+(5, "Godzilla:King of the Monsters"),
+(6, "Rambo: Last Blood")'
+)
+```
+
+
+```{r }
+table2<-dbGetQuery(conn, 'CREATE TABLE sandbox.critics (
+user_id INT PRIMARY KEY,
+user_name VARCHAR(55) NOT NULL'
+)
+```
+
+```{r}
+data2<-dbGetQuery(conn,'INSERT INTO sandbox.critics (user_id, user_name)
+VALUES
+(1, "Ivan"),
+(2, "Nick"),
+(3, "Victoria"),
+(4, "Roman"),
+(5, "Arianna")'
+)
+```
+
+
+
+```{r}
+table3<-dbGetQuery(conn, 'CREATE TABLE sandbox.rate (
+user_id INT,
+movie_id INT,
+rating FLOAT'
+);
+```
+
+```{r}
+table3<-dbGetQuery(conn, 'INSERT INTO sandbox.rate (user_id, movie_id, rating)
+VALUES
+(1, 1, "4"),
+(1, 2, "2"),
+(1, 3, "5"),
+(1, 4, "5"),
+(1, 5, "3"),
+(1, 6, "3"),
+
+(2, 1, "5"),
+(2, 2, "4"),
+(2, 3, "4"),
+(2, 4, "5"),
+(2, 5, "4"),
+(2, 6, "2"),
+
+(3, 1, "4"),
+(3, 2, "2"),
+(3, 3, "5"),
+(3, 4, "3"),
+(3, 5, "5"),
+(3, 6, "1"),
+
+(4, 1, "5"),
+(4, 2, "5"),
+(4, 3, "4"),
+(4, 4, "2"),
+(4, 5, "3"),
+(4, 6, "4"),
+
+(5, 1, "1"),
+(5, 2, "4"),
+(5, 3, "4"),
+(5, 4, "3"),
+(5, 5, "3"),
+(5, 6, "5")'
+)
+
+```
+
+
+
+#### Load the information into an R dataframe. 
+
+
+```{r}
+Movie<- dbGetQuery(conn, 'SELECT*FROM sandbox.movie') 
+```
+
+
+```{r}
+Critic<- dbGetQuery(conn, 'select * from sandbox.critics') 
+```
+
+
+```{r}
+Rate<- dbGetQuery(conn, 'select * from sandbox.rate') 
+```
+
+
+
+```{r}
+sql1<-dbGetQuery(conn, '
+SELECT a.movie_name, r.rating, c.user_name 
+                    FROM sandbox.movie a
+                     LEFT JOIN sandbox.rate r on a.movie_id = r.movie_id
+                     LEFT JOIN sandbox.critics c ON r.user_id = c.user_id
+                     ORDER BY movie_name;')
+colnames(sql1) <-c("Movie", "Rating","Critic")
+kable(sql1) 
+```
+
+
+## Let's see the sum of ratings for each movie. 
+
+```{r}
+sql2<-dbGetQuery(conn,'
+  SELECT a.movie_name, Sum (r.rating) 
+                    FROM sandbox.movie a
+                     LEFT JOIN sandbox.rate r on a.movie_id = r.movie_id
+                     GROUP BY a.movie_name')
+
+colnames(sql2) <-c("Movie", "Rating")
+a<-sql2
+a
+```
+
+
+
+```{r}
+
+ggplot(a, aes(x = Rating))+
+  geom_bar(aes(fill = Movie))
+```
+
+
+From the data visualisation we can conclude that the ratings for movie "Terminator: Dark Fate" and "Godzilla:King of the Monsters" are the same.  The lowest ratings is for "Rambo: Last Blood"" and the highest is for movie "Captain: MArvel".
