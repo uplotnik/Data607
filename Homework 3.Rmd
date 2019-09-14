@@ -1,0 +1,148 @@
+---
+title: "Assignment 3"
+author: "Uliana Plotnikova"
+date: "September 14, 2019"
+output: html_document
+---
+
+
+```{r}
+raw.data <-"555-1239Moe Szyslak(636) 555-0113Burns, C. Montgomery555-6542Rev. Timothy Lovejoy555 8904Ned Flanders636-555-3226Simpson, Homer5543642Dr. Julius Hibbert"
+
+```
+
+
+```{r}
+library(stringr)
+```
+
+### Excersize 3 
+### Copy the introductory example. The vector name stores the extracted names.
+
+```{r}
+name<-unlist(str_extract_all(raw.data, "[[:alpha:]., ]{2,}"))
+name
+
+```
+#### 3.1. Use the tools of this chapter to rearrange the vector so that all elements conform to the standard first_name last_name
+
+```{r}
+FirstName<-str_extract(unlist(str_extract(name,"[:alpha:]{2,} |, [:print:]{2,}")),"[A-Z](.+?)[a-z]+")
+FirstName
+
+```
+
+```{r}
+LastName<-str_extract(unlist(str_extract(name,"[A-z] [:alpha:]{2,}[a-z]$|[:print:]{2,},")),"[A-z][a-z]+|[A-z][a-z]")
+LastName
+```
+
+
+```{r}
+Full_Name<- str_c(FirstName,LastName , sep= " "  )
+data.frame (Full_Name)
+```
+
+
+
+#### 3.2. Construct a logical vector indicating wether a character has a title (i.e, Rev. and Dr.)
+
+
+```{r}
+title<-unlist(str_match_all(name, "Dr.|Rev."))
+title
+```
+
+#### 3.3  Construct a logical vector indicating whether a character has a second name
+
+```{r}
+sec_name<-unlist(str_match_all(name," [A-Z]\\."))
+sec_name
+```
+
+
+
+### Excersize 4.
+#### Describe the types of strings that conform to the following regular expressions and construct an example that is matched by the regular expression.
+ 
+```{r}
+ ## a.[0-9] equivalent to [:digit:] or \d: digits, 0 1 2 3 4 5 6 7 8 9.The string "[0-9]+\\$" means that there are one or more numbers followed by $ sign. 
+string1="[0-9]+\\$"
+example1 = c("123456$", "123$")
+str_detect(example1, string1)
+```
+
+
+```{r} 
+ ## b.  \b is useful for word edge and can help to be more specific in the location of matches.
+##The string below helps to find the word that has any letters a to z and no more than 4 letters
+string2="\\b[a-z]{1,4}\\b"
+example2=c("gym", "bug", "ball")
+str_detect(example2, string2)
+```
+
+
+```{r}
+ ## c. Finds pattern that ends with .txt
+string3=".*?\\.txt$"
+example3=c("book.txt", "bear56.txt")
+str_detect(example3, string3)
+```
+
+
+```{r}
+ ##  d.Finds pattern of numbers in the format 00/00/0000 
+string4="\\d{2}/\\d{2}/\\d{4}"
+example4=c("08/26/2019", "09/03/2019 School time")
+str_detect(example4, string4)
+```
+
+
+```{r}
+ ## e. Finds tags in an HTML documents
+string5="<(.+?)>.+?</\\1"
+example5=c('Weather<tag>is<tag>beautiful', '<tag>I love school</tag>')
+str_detect(example4, string4)
+```
+
+
+
+
+### Exersize 5
+#### Rewrite the expression [0-9]+\\$ in a way that all elements are altered but the expression performs the same task
+
+```{r}
+case1="[0-9]+\\$"
+example=c("7$","123$")
+str_detect(example,case1)
+case2="\\d+[$]"
+example=c("7$","123$")
+str_detect(example,case2)
+```
+
+
+### Excersize 9
+
+```{r}
+code <- c("clcopCow1zmstc0d87wnkig7OvdicpNuggvhryn92Gjuwczi8hqrfpRxs5Aj5dwpn0TanwoUwisdij7Lj8kpf03AT5Idr3coc0bt7yczjatOaootj55t3Nj3ne6c4Sfek.r1w1YwwojigOd6vrfUrbz2.2bkAnbhzgv4R9i05zEcrop.wAgnb.SqoU65fPa1otfb7wEm24k6t3sR9zqe5fy89n6Nd5t9kc4fE905gmc4Rgxo5nhDk!gr")
+```
+
+
+
+```{r}
+unlist(str_extract_all(code, "[:alpha:]"))
+```
+
+```{r}
+code1 <- unlist(str_extract_all(code, "[[:upper:].!]"))
+code1
+```
+
+
+```{r}
+code2=paste(code1, collapse="")
+Secret_message <- c( str_replace_all(code2, "[\\.]",  "  "))
+Secret_message
+
+```
+
