@@ -1,0 +1,173 @@
+---
+title: "Project 1"
+author: "Uliana Plotnikova"
+date: "September 22, 2019"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: hide
+
+---
+
+```{r}
+library ("stringr")
+library ("kableExtra")
+```
+
+# Raw Data
+```{r}
+url<-read.csv( "https://raw.githubusercontent.com/uplotnik/Data607/master/Project%201.txt")
+a<-url
+head(a,15)
+```
+
+# Data cleaning
+
+
+```{r}
+clean_data <- a[c(4:nrow(a)),]
+head(clean_data)
+```
+
+```{r }
+clean_data1 <- str_replace_all(clean_data,  "\\s+",   " ")
+head(clean_data1,6)
+```
+
+
+
+```{r}
+cl_data<- clean_data[seq(1, 190, 3)]
+head(cl_data,2)
+```
+
+
+
+# Data extraction
+
+
+## Player's ID
+```{r}
+ID <- unlist(str_extract_all(unlist(clean_data), "\\d{1,2}(?=\\s\\|)"))
+head(ID,10)
+
+```
+
+## Player's Name
+
+```{r}
+Player_name<-unlist(str_extract_all(unlist(clean_data), "([[:alpha:]]+\\s){2,}"))
+head(Player_name,10)
+```
+
+## Player's State
+
+```{r}
+state <- "([[:alpha:]]){2}\\s(?=\\|)"
+State <- unlist(str_extract_all(unlist(clean_data), state))
+head(State,10)
+```
+
+## Total Points
+
+```{r}
+Points <- unlist(str_extract_all(unlist(clean_data1), "\\d\\.\\d(?=\\s\\|)"))
+head(Points,10)
+```
+
+## Pre-rating
+
+```{r}
+r <- unlist(str_extract_all(clean_data, "[:]([[:space:]]+)([[:alnum:]]+)([[:space:]]*)"))
+r2 <- unlist(str_extract_all(unlist(str_extract_all(r, "\\d+[[:alnum:]]+")), "\\d\\d\\d+", simplify=TRUE))
+Pre_Ratings <- r2[!r2[,] == " ",]
+head(Pre_Ratings,10)
+```
+
+
+## Post-rating 
+
+```{r}
+post_r <- unlist(str_extract_all(clean_data, "[->]\\s*[[:digit:]]+"))
+Post_Rating <- unlist(str_extract_all(post_r, "[[:digit:]]+"))
+head(Post_Rating,10)
+```
+
+## USCFID
+
+```{r}
+USCFID <- unlist(str_extract_all(clean_data, "\\d{8}"))
+head(USCFID,10)
+
+```
+## Opponents
+
+```{r}
+cleaning <- unlist(str_extract_all(clean_data, "[WLDUH][[:blank:]]{2,3}[[:digit:]]{0,2}"))
+cleanresult <- subset(cleaning, cleaning != "W   ")
+Opponents <- matrix(cleanresult, nrow = 64, ncol = 7, byrow = TRUE)
+head(Opponents, 5)
+```
+
+```{r}
+##Rounds <- NULL
+##Rounds <- ifelse(str_detect(cleanresult, "[[:digit:]]{1,2}"), unlist(str_extract_all(cleanresult, "[[:digit:]]{1,2}")), NA)
+##Oppon <- matrix(Rounds, nrow = 64, ncol = 7, byrow = TRUE)
+```
+
+
+```{r}
+colnames(Opponents)<- c("Round1","Round2","Round3","Round4","Round5","Round6","Round7")
+```
+
+
+## Clean data
+
+```{r}
+extracteddata <-data.frame(ID,Player_name,State,Points,Pre_Ratings,Post_Rating, USCFID, Opponents)
+kable(head(extracteddata)) %>%
+kable_styling(bootstrap_options = c("striped", "hover", "condensed" )) %>%
+  column_spec(1:2, bold = T, )%>%
+scroll_box(width = "500px", height = "300px")
+```
+
+
+
+# Find the Average Rating of Opponents
+
+```{r}
+##  Before using a loop convert "character" to "integer"
+Pre_Ratings1<-as.integer(Pre_Ratings)
+ID1 <- as.integer(str_extract(cl_data, "\\d+"))
+```
+```{r}
+Ave<- str_extract_all(str_extract_all(cl_data, "\\d+\\|"), "\\d+")
+```
+
+
+```{r }
+AveOppRating <- length(cl_data)
+for (i in 1:length(cl_data)) { 
+  AveOppRating [i] <- round(mean(Pre_Ratings1[as.numeric(unlist(Ave[ID1[i]]))])) 
+}
+opData <- data.frame(AveOppRating);
+head(opData,10)
+```
+# Final Table
+```{r }
+finaltable<-data.frame(ID,Player_name,State,Points,Pre_Ratings,opData)
+kable(finaltable) %>%
+kable_styling(bootstrap_options = c("striped", "hover", "condensed"))%>%
+  column_spec(1:6, bold = T, border_right = T)%>%
+scroll_box(width = "800px", height = "300px")
+```
+
+# Save in csv.file
+```{r}
+
+write.table(finaltable, file = "UlianaP-TournamentInfo.csv",row.names=FALSE, na="",col.names=TRUE, sep=",")
+
+```
+
+
