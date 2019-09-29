@@ -1,0 +1,33 @@
+---
+title: "Homework 5"
+author: "Uliana Plotnikova"
+date: "September 24, 2019"
+output: html_document
+---
+
+
+```{r}
+install.packages('tidyr')
+```
+
+
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(knitr)
+library(stringr)
+library(ggplot2)
+```
+
+
+
+```{r setup, include=FALSE}
+
+
+flights <- read.csv("https://raw.githubusercontent.com/uplotnik/Data607/master/Airlines.csv", 
+                    sep = ",", header = TRUE)
+
+flights
+```
+
