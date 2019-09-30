@@ -1,0 +1,162 @@
+---
+title: "Project 2 Data 607"
+author: "Uliana Plotnikova"
+date: "September 29, 2019"
+output: 
+html_document:
+    toc: true
+    toc_float: true
+    code_folding: hide
+---
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+```
+
+
+
+```{r}
+url<-"https://raw.githubusercontent.com/fivethirtyeight/data/master/drug-use-by-age/drug-use-by-age.csv"
+
+##Read empty and "-" cells with NA
+dataset <- read.csv(url, na.strings = c("-", "NA"),
+                    sep = ",", header = TRUE)
+head(dataset,5)
+```
+
+```{r}
+##Rename clumns for easy manipulation 
+dataset <- dataset %>%
+  rename("pain releiver.use" = pain.releiver.use,
+         "pain releiver.frequency" = pain.releiver.frequency)
+```
+
+
+
+```{r}
+data2 <- dataset%>%
+  gather(drug, value, alcohol.use:sedative.frequency) %>% 
+  arrange(age)
+ head(data2,5) 
+```
+
+
+
+
+
+```{r}
+data3<-data2 %>% 
+  separate(drug, into = c("drug", "var"), sep = "\\." )
+head(data3,5)
+```
+
+
+```{r}
+newdata <- data3 %>% 
+  filter(var=="use") %>%
+  arrange(drug)
+  head(newdata,5)
+```
+
+
+
+```{r}
+##Drugs consumption regardless age
+total_drug<-aggregate(newdata$value, by=list(DRUG=newdata$drug), FUN=sum)
+##  rename column
+total_drug<- dplyr::rename(total_drug, 'Total'='x')
+head (total_drug,5 )
+  
+```
+
+
+```{r}
+ggplot(
+  total_drug, aes(x = DRUG, y = Total ,fill=DRUG)) + 
+  geom_bar(stat="identity") +
+  ggtitle("DRUG CONSUMTION 12 y.o - 65+ y.o")+ 
+  theme(axis.text=element_text(angle=90))+
+  labs(x="DRUG",y="Total consumtion")
+```
+
+
+```{r}
+newdata1 <- data3 %>% 
+  filter(var=="frequency") %>%
+  arrange(drug)
+  head(newdata1,5)
+```
+
+```{r}
+total_frequency<-aggregate(newdata1$value, by=list(DRUG=newdata1$drug), FUN=sum)
+##  rename column
+total_frequency<- dplyr::rename(total_frequency, 'Total_Frequency'='x')
+head (total_frequency,5 )
+```
+
+
+```{r}
+ggplot(
+  total_frequency, aes(x = DRUG, y = Total_Frequency ,fill=DRUG)) + 
+  geom_bar(stat="identity") +
+  ggtitle("DRUG CONSUMTION FREQUENCY")+ 
+  theme(axis.text=element_text(angle=45))+
+  labs(x="DRUG",y="Frequency")
+```
+
+
+## Alchohol
+
+```{r}
+alcohol <- data3 %>% 
+  filter(drug=="alcohol")
+
+head(alcohol,5)
+```
+
+```{r}
+ggplot(alcohol, aes(x = factor(age), y = value, colour = var, size = 1)) + 
+    geom_point() + xlab('age')+ggtitle("Alchohol")+theme(axis.text=element_text(angle=45))
+```
+
+
+## Marijuana
+
+```{r}
+marijuana <- data3 %>% 
+  filter(drug=="marijuana") 
+head(marijuana,5)
+```
+
+
+
+```{r}
+ggplot(marijuana, aes(x = factor(age), y = value, colour = var, size=1)) + 
+    geom_point() + xlab('age')+  ggtitle("Marijuana")+theme(axis.text=element_text(angle=45))
+
+```
+
+
+```{r}
+age_12 <- data3 %>% 
+  filter(age == 12) 
+```
+
+```{r}
+ggplot(age_12, aes(x = factor(drug), y = value, colour = var, size=1)) + 
+    geom_point() + xlab('age')+ggtitle("12 years old")+theme(axis.text=element_text(angle=45))
+```
+
+```{r}
+age_65 <- data3 %>% 
+  filter(age == '65+') 
+```
+
+```{r}
+ggplot(age_65, aes(x = factor(drug), y = value, colour = var, size=1)) + 
+    geom_point() + xlab('age')+ggtitle("65+ years old")+  theme(axis.text=element_text(angle=45))
+
+```
+
