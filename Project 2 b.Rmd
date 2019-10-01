@@ -1,0 +1,141 @@
+---
+title: "Project B"
+author: "Uliana Plotnikova"
+date: "September 30, 2019"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: hide
+    
+---
+
+
+# Extract and prepare data
+
+```{r warning=FALSE}
+library ("dplyr")
+library ("tidyr")
+library(data.table)
+library(ggplot2)
+```
+
+
+
+```{r}
+url<-"https://raw.githubusercontent.com/fivethirtyeight/data/master/airline-safety/airline-safety.csv"
+a<- read.csv(url)
+head(a,5)
+```
+###Rename clumns
+```{r}
+##Rename clumns for easy manipulation 
+dataset <- a %>%
+  rename("Incidents. 1985-1999"= incidents_85_99,
+         "Fatal accidents. 1985-1999" = fatal_accidents_85_99,
+         "Fatalities. 1985-1999"= fatalities_85_99,
+         "Incidents. 2000-2014" = incidents_00_14,
+         "Fatal accidents. 2000-2014" = fatal_accidents_00_14,
+        "Fatalities. 2000-2014" = fatalities_00_14)
+head(dataset,3)
+```
+###Gather columns
+
+```{r}
+data2 <- dataset %>%
+  gather(Episode, Quantity, 'Incidents. 1985-1999' :'Fatalities. 2000-2014') %>%
+  arrange(airline)
+ head(data2,5) 
+```
+
+### Separate column
+```{r}
+data3<-data2 %>% 
+  separate(Episode, into = c("Episode", "YEAR"), sep = "\\. " )
+head(data3,5)
+```
+
+### Sum Episodes
+```{r}
+tx<-aggregate(data3$Quantity, by=list(Episode=data3$Episode, Year=data3$YEAR), FUN=sum)
+ ##rename column
+tx<- dplyr::rename(tx, 'Total'='x')
+head (tx,5 )
+```
+
+### Total Episodes by Years
+```{r}
+ggplot(data=tx, aes(x=Episode, y=Total, fill=Year)) +
+geom_bar(stat="identity", position=position_dodge())
+```
+
+### Mean, max of Episodes by Year and Episode Category
+```{r}
+data3%>%
+  group_by(Episode, YEAR) %>%
+  summarise(
+    mean = mean(Quantity), max=max(Quantity))%>%
+  arrange(Episode)
+
+```
+
+
+### Total Episodes by years 
+```{r}
+total<-aggregate(data3$Quantity, by=list(Years=data3$YEAR), FUN=sum)
+ ##rename column
+total<- dplyr::rename(total, 'Total'='x')
+head (total,5 )
+```
+
+
+# Analyse flight episodes 1985-1999
+```{r}
+newdata <- data3 %>% 
+  filter(YEAR=="1985-1999") 
+  head(newdata,5)
+```
+### Total episodes by airlines
+
+```{r}
+total<-aggregate(newdata$Quantity, by=list(Carrier=newdata$airline, Seats=newdata$avail_seat_km_per_week), FUN=sum)
+ ##rename column
+total<- dplyr::rename(total, 'Total'='x')%>%
+ arrange(desc(Total))
+head (total,15 )
+```
+
+### Visualization
+```{r}
+ggplot(newdata, aes(x=reorder(airline,Quantity),y=Quantity,fill=Episode)) + geom_bar(stat = "identity", position="dodge") + coord_flip()+ ylab("Total") +xlab("Airline") +ggtitle("Flights 1985-1999")
+```
+
+# Analyse fliht episodes 2000-2014
+
+
+```{r}
+newdata1 <- data3 %>% 
+  filter(YEAR=="2000-2014") 
+  head(newdata1,5)
+```
+
+### Total episodes by airlines
+
+```{r}
+total1<-aggregate(newdata1$Quantity, by=list(Carrier=newdata$airline, Seats=newdata$avail_seat_km_per_week), FUN=sum)
+ ##rename column
+total1<- dplyr::rename(total1, 'Total'='x')%>%
+  arrange(desc(Total))
+head (total1,15 )
+```
+
+### Visualization
+
+```{r}
+ggplot(newdata1, aes(x=reorder(airline,Quantity),y=Quantity,fill=Episode)) + geom_bar(stat = "identity", position="dodge") + coord_flip()+ ylab("Total") +xlab("Airline") +ggtitle("Flights 2000-2014")
+
+```
+
+
+
+
