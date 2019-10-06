@@ -1,0 +1,200 @@
+---
+title: "Data 607 Project 2c"
+author: "Uliana Plotnikova"
+date: "October 06, 2019"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: hide
+    
+---
+
+
+# Extract and prepare data
+
+
+```{r warning=FALSE}
+library ("dplyr")
+library ("tidyr")
+library(data.table)
+library(ggplot2)
+library(gtable)
+```
+
+
+
+```{r setup, include=FALSE}
+url<-"https://raw.githubusercontent.com/uplotnik/Data607/master/US_births_2000-2014_SSA.csv"
+
+##Read empty and "-" cells with NA
+dataset <- read.csv(url, na.strings = c("-", "NA"),
+                    sep = ",", header = TRUE)
+```
+
+*US_births_2000-2014_SSA.csv contains U.S. births data for the years 2000 to 2014, as provided by the Social Security Administration.*
+
+```{r}
+df<-data.frame(dataset)
+head(df,10)
+```
+
+### Rename data
+
+```{r}
+updated<-df%>%mutate(day_of_week=recode(day_of_week, 
+       "7"="Sunday",
+       "1"="Monday",
+       "2"="Tuesday",
+       "3"="Wednesday",
+       "4"="Thursday",
+       "5"="Friday",
+       "6"="Saturday"),
+month=recode(month, 
+       "1"="January",
+       "2"="February",
+       "3"="March",
+       "4"="April",
+       "5"="May",
+       "6"="June",
+       "7"="July",
+       "8"= "August",
+       "9"="September",
+       "10"="October",
+       "11"="November",
+       "12"="December"))
+head(updated,3)
+```
+
+
+# Analyse total birth by year
+
+
+
+```{r}
+##Find Avg, Min, Max, Total and Proportion for each year
+yearlybirths<- updated %>%
+    group_by(year) %>%
+    summarise(avg_births = mean(births), 
+              min_births = min(births),
+              max_births = max(births),
+              total_births= sum(births))%>%
+         mutate(total_birth_prop = prop.table(total_births))%>%
+  arrange(desc(year))
+head(yearlybirths,5)
+```
+
+### Avg, Min, Max, Total Births 2000-2014
+
+
+```{r}
+total<-yearlybirths %>%
+  summarise(avg_births_2000_2014 = mean(avg_births),
+            min_births_2000_2014 = min(min_births),
+              max_births_2000_2014 = max(max_births),
+            total_births_2000_2014= sum(total_births))
+total
+```
+
+
+```{r}
+ggplot(yearlybirths) + 
+  geom_ribbon(aes(year,ymin=min_births,ymax=max_births),color="yellow",alpha=0.5) +
+  geom_line(aes(year,avg_births))+ labs( x="Year", y="Birth Average")+ggtitle("Birth Average")
+```
+
+### The busiest Birth Years
+
+```{r}
+g2<-ggplot(data=yearlybirths, aes(x=year, y=total_birth_prop, group=10)) +
+  geom_line(arrow = arrow())+
+  geom_point()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  labs( x="Year", y="Birth Proportion")+ggtitle("The Busiest Birth Years")
+g2
+```
+
+
+
+As we can see, the peak of deliveries is between 2006-2008 years.
+
+
+# Analyse total birth by months
+
+```{r}
+##Find the busiest birth months
+monthlybirths<- updated %>%
+    group_by(month) %>%
+    summarise(total_births= sum(births))%>%
+         mutate(total_birth_prop = prop.table(total_births))%>%
+  arrange(match(month,month.name))
+
+g3<-ggplot(data=monthlybirths, aes(x=month, y=total_birth_prop, group=10)) +
+  geom_line(arrow = arrow())+
+  geom_point()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  labs( x="Month", y="Birth Proportion")+ggtitle("The busiest Birth Months")
+g3
+```
+
+
+
+August is the overall most popular month for birthdays, which makes sense, considering a late August birthday means December conception.Cold weather, snow, romantic fires and holiday parties seems to create just the right equation for the beginning of human mating season.February is the least common birth month. That's also logical, seeing as nine months prior is May which marks longer, sunnier days, warmer temperatures and usually more outside activity.
+
+
+# The most common day of the week for babies to be born
+
+
+```{r}
+weeklybirths<- updated %>%
+    group_by(year,day_of_week) %>%
+    summarise(total_births= sum(births))%>%
+         mutate(total_birth_prop = prop.table(total_births))
+ 
+p <- ggplot(data = weeklybirths, mapping = aes(x = year, y = total_birth_prop))
+p + geom_line(color="gray70", aes(group = day_of_week)) +
+    geom_smooth(size = 2, method = "loess", se = FALSE) +
+ facet_wrap(~ day_of_week, ncol = 7) +
+    labs(x = "Year",
+         y = "Births",
+         title = "Weekly birth")
+ 
+```
+
+
+As we can see, the least comon days are Saturday and Sunday. Many births are scheduled, either as induced deliveries or cesarean section, that explains why the least comon delivery days are Saturday and Sunday.
+
+
+
+## Investigate the Fridays Birth
+ 
+ Some People Are Too Superstitious To Have A Baby On Friday The 13th. In order to investigate if there are less babies were born on Friday 13, I filtered the data by date of the week - Friday, summarise the births by day of the months and found the proportion of the total for each date of the month. 
+ 
+
+```{r}
+friday <- updated %>% 
+        filter(day_of_week %like% "Friday")%>%
+  group_by(date_of_month)%>% 
+arrange(date_of_month)%>%
+    group_by(date_of_month) %>%
+    summarise(total_births= sum(births))%>%
+         mutate(total_birth_prop = prop.table(total_births))%>%
+  arrange(total_births)
+      
+head(friday,5)
+```
+
+
+Reference: https://www.unitypoint.org/livewell/article.aspx?id=ad80d6cc-6a53-49f3-b496-8c0f48b47936
+
+
+
+
+
+
+
+
+
+
+
+

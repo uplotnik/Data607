@@ -1,0 +1,231 @@
+---
+title: "Data 607 Project 2a"
+author: "Uliana Plotnikova"
+date: "October 06, 2019"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: hide
+    
+---
+
+
+### Extract and prepare data
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+
+```
+
+
+
+```{r}
+url<-"https://raw.githubusercontent.com/uplotnik/Data607/master/drug%20use%20by%20age.csv"
+
+##Read empty and "-" cells with NA
+dataset <- read.csv(url, na.strings = c("-", "NA"),
+                    sep = ",", header = TRUE)
+head(dataset,10)
+```
+### Rename columns
+
+
+```{r}
+##Rename clumns for easy manipulation 
+dataset <- dataset %>%
+  rename("pain releiver.use" = pain.releiver.use,
+         "pain releiver.frequency" = pain.releiver.frequency)
+```
+
+
+### Gather columns
+
+```{r}
+data2 <- dataset%>%
+  gather(drug, value, alcohol.use:sedative.frequency) %>% 
+  arrange(age)
+ head(data2,5) 
+```
+
+
+
+### Separate column
+
+
+```{r}
+data3<-data2 %>% 
+  separate(drug, into = c("drug", "var"), sep = "\\." )
+head(data3,5)
+```
+
+### Filter and arrange
+```{r}
+newdata <- data3 %>% 
+  filter(var=="use") %>%
+  arrange(drug)
+  head(newdata,5)
+```
+
+### Mean, Median and Standard deviation of overall drug usage 
+
+```{r}
+group_by(newdata, age)  %>% summarise(mean_usage = mean(value),median_usage = median(value), sd_usage = sd(value))
+```
+
+
+### The most popular drug 
+
+
+```{r}
+total_drug<-aggregate(newdata$value, by=list(DRUG=newdata$drug), FUN=sum)%>%
+  group_by(DRUG) %>% 
+  summarise(count=(x)) %>% 
+  mutate(perc=count/sum(count))
+
+##  rename column
+total_drug<- dplyr::rename(total_drug, 'Total'='count')
+head (total_drug,5 )
+  
+```
+
+
+```{r}
+
+    ggplot(total_drug, aes(x = DRUG, y = perc, fill = DRUG, label = scales::percent(perc))) + 
+    geom_col(position = 'dodge') + 
+    geom_text(position = position_dodge(width = .9),    # move to center of bars
+              vjust = -0.5,    # nudge above top of bar
+              size = 3) + 
+    scale_y_continuous(labels = scales::percent)+  theme(axis.text=element_text(angle=90))+  ggtitle("DRUG CONSUMTION 12 y.o - 65+ y.o")
+
+
+```
+
+### The most popular drug by age
+```{r}
+group_by(newdata, age)  %>% filter(value == max(value)) %>% arrange(age)  %>% select (age,drug,value)
+```
+
+### The least popular drug by age
+
+```{r}
+group_by(newdata, age)  %>% filter(value == min(value)) %>% arrange(age)  %>% select (age,drug,value)
+
+```
+
+
+### Frequency of drug consumption
+
+```{r}
+newdata1 <- data3 %>% 
+  filter(var=="frequency") %>%
+  arrange(drug)
+  head(newdata1)
+```
+
+
+```{r}
+group_by(newdata1, age)  %>% summarise(mean_frequency = mean(value),median_frequency = median(value), sd_frequency = sd(value))
+
+```
+
+
+```{r}
+total_frequency<-aggregate(newdata1$value, by=list(DRUG=newdata1$drug), FUN=sum)
+
+##  rename column
+total_frequency<- dplyr::rename(total_frequency, 'Total'='x')
+total_frequency
+  
+```
+
+
+
+
+
+```{r}
+ggplot(
+  total_frequency, aes(x = DRUG, y = Total ,fill=DRUG)) + 
+  geom_bar(stat="identity") +
+  ggtitle("DRUG CONSUMTION FREQUENCY")+ 
+  theme(axis.text=element_text(angle=45))+
+  labs(x="DRUG",y="Frequency")
+```
+
+
+
+
+*Let's  further investigate Alchohol and Marijuana consumption*
+
+
+### Alchohol
+
+```{r}
+alcohol <- data3 %>% 
+  filter(drug=="alcohol")
+
+head(alcohol,5)
+```
+
+```{r}
+ggplot(alcohol, aes(x = factor(age), y = value, colour = var, size = 1)) + 
+    geom_point() + xlab('age')+ggtitle("Alchohol")+theme(axis.text=element_text(angle=45))
+```
+
+
+*Based on the data visualisation the highest value of Alchohol consumption is between 21-25 y.o and it is slightly going down with the age. It is interesting that the frequency of Alchohol use reaches its peak at 21y.o and almost not changing during the life.*
+
+
+
+### Marijuana
+
+```{r}
+marijuana <- data3 %>% 
+  filter(drug=="marijuana") 
+head(marijuana,5)
+```
+
+
+
+```{r}
+ggplot(marijuana, aes(x = factor(age), y = value, colour = var, size=1)) + 
+    geom_point() + xlab('age')+  ggtitle("Marijuana")+theme(axis.text=element_text(angle=45))
+
+```
+
+
+
+
+*Smoking Marijuana reaches its peak between 18-21 y.o and slightly goes down. Interesting, that the highest frequency point is 30-34 y.o.* 
+
+
+
+*I was surprised that 12 y.o kids were included in the data and decided to check what drugs are commonly used.*
+
+```{r}
+age_12 <- data3 %>% 
+  filter(age == 12) 
+```
+
+```{r}
+ggplot(age_12, aes(x = factor(drug), y = value, colour = var, size=1)) + 
+    geom_point() + xlab('age')+ggtitle("12 years old")+theme(axis.text=element_text(angle=45))
+```
+
+*Let's now review 65 y.o. *
+
+
+```{r}
+age_65 <- data3 %>% 
+  filter(age == '65+') 
+```
+
+```{r}
+ggplot(age_65, aes(x = factor(drug), y = value, colour = var, size=1)) + 
+    geom_point() + xlab('age')+ggtitle("65+ years old")+  theme(axis.text=element_text(angle=45))
+
+```
+

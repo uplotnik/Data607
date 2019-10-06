@@ -1,0 +1,239 @@
+---
+title: "Data 607 Project 2b"
+author: "Uliana Plotnikova"
+date: "October 06, 2019"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: hide
+    
+---
+
+
+# Extract and prepare data
+
+```{r warning=FALSE}
+library ("dplyr")
+library ("tidyr")
+library(data.table)
+library(ggplot2)
+library(kableExtra)
+
+```
+
+
+
+```{r}
+url<-"https://raw.githubusercontent.com/uplotnik/Data607/master/Airline-Safety.csv"
+a<- read.csv(url)
+kable(head(a, 10))
+```
+###Rename columns
+```{r}
+##Rename columns for easy manipulation 
+dataset <- a %>%
+  rename("Incidents. 1985-1999"= incidents_85_99,
+         "Fatal accidents. 1985-1999" = fatal_accidents_85_99,
+         "Fatalities. 1985-1999"= fatalities_85_99,
+         "Incidents. 2000-2014" = incidents_00_14,
+         "Fatal accidents. 2000-2014" = fatal_accidents_00_14,
+        "Fatalities. 2000-2014" = fatalities_00_14)
+head(dataset,5)
+```
+###Gather columns
+
+```{r}
+data2 <- dataset %>%
+  gather(Episode, Quantity, 'Incidents. 1985-1999' :'Fatalities. 2000-2014') %>%
+  arrange(airline)
+ head(data2,5) 
+```
+
+### Separate column
+
+
+```{r}
+data3<-data2 %>% 
+  separate(Episode, into = c("Episode", "YEAR"), sep = "\\. " )
+head(data3,5)
+```
+
+### Sum Episodes
+```{r}
+tx<-aggregate(data3$Quantity, by=list(Episode=data3$Episode, Year=data3$YEAR), FUN=sum) %>%
+  group_by(Episode,Year) %>% 
+  summarise(count=(x)) %>% 
+  mutate(perc=count/sum(count))
+ ##rename column
+tx<- dplyr::rename(tx, 'Total'='count', 'Percent'='perc')
+head (tx,5 )
+```
+
+
+
+
+### Total Episodes by Years
+
+```{r}
+p<-ggplot(tx, aes(x=Episode, y=Total, group=Year)) +
+  geom_line(aes(color=Year))+
+  geom_point(aes(color=Year))
+p
+```
+
+
+```{r}
+total<-aggregate(data3$Quantity, by=list(Years=data3$YEAR), FUN=sum) %>%
+  mutate(pct_change = ((x/lag(x) - 1) * 100))
+
+ ##rename column
+total<- dplyr::rename(total, 'Total'='x', 'Percentage change'='pct_change')
+total
+```
+
+
+The total quantity of episodes dropped on almost 51% after 1999.
+
+
+
+```{r}
+
+    ggplot(tx, aes(x = Episode, y = Percent, fill = Year, label = scales::percent(Percent))) + 
+    geom_col(position = 'dodge') + 
+    geom_text(position = position_dodge(width = .9),    
+              vjust = -0.5,    
+              size = 3) + 
+    scale_y_continuous(labels = scales::percent)+  theme(axis.text=element_text(angle=90))+  ggtitle("Total Episodes by Years")
+
+
+
+```
+
+
+
+# Analyse flight episodes 1985-1999
+```{r}
+newdata <- data3 %>% 
+  filter(YEAR=="1985-1999") 
+  head(newdata,5)
+```
+
+### The safest airlines in 1985-1999	
+
+```{r}
+group_by(newdata, airline)  %>% filter(Quantity == min(Quantity)) %>% arrange(Quantity)  %>% select (airline,Episode,Quantity)
+
+```
+
+
+```{r}
+newdata %>%
+  group_by(Episode, YEAR) %>%
+  summarise(
+    mean = mean(Quantity), max=max(Quantity))%>%
+  arrange(Episode)
+
+```
+
+
+
+### Total episodes by airlines
+
+```{r}
+total<-aggregate(newdata$Quantity, by=list(Carrier=newdata$airline, Seats=newdata$avail_seat_km_per_week), FUN=sum)
+ ##rename column
+total<- dplyr::rename(total, 'Total'='x')%>%
+ arrange(desc(Total))
+head (total,15 )
+```
+
+
+
+
+
+
+### Visualization
+```{r}
+g2<-ggplot(data=total, aes(x=Carrier, y=Total, group=10)) +
+  geom_line(arrow = arrow())+
+  geom_point()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  labs( x="Carrier", y="Total")+ggtitle("Total Episodes 1985-1999")
+g2
+```
+
+
+```{r}
+
+ggplot(newdata, aes(airline, Quantity, color = Episode)) +
+  geom_point()+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+```
+
+# Analyse fliht episodes 2000-2014
+
+
+```{r}
+newdata1 <- data3 %>% 
+  filter(YEAR=="2000-2014") 
+  head(newdata1,5)
+```
+
+
+
+```{r}
+newdata1 %>%
+  group_by(Episode, YEAR) %>%
+  summarise(
+    mean = mean(Quantity), max=max(Quantity))%>%
+  arrange(Episode)
+
+```
+
+### The safest airlines 2000-2014
+```{r}
+group_by(newdata1, airline)  %>% filter(Quantity == min(Quantity)) %>% arrange(airline)  %>% select (airline,Episode,Quantity)
+
+```
+
+
+
+### Total episodes by airlines
+
+```{r}
+total1<-aggregate(newdata1$Quantity, by=list(Carrier=newdata$airline, Seats=newdata$avail_seat_km_per_week), FUN=sum)
+ ##rename column
+total1<- dplyr::rename(total1, 'Total'='x')%>%
+  arrange(desc(Total))
+head (total1,15 )
+```
+
+### Visualization
+
+
+```{r}
+g2<-ggplot(data=total1, aes(x=Carrier, y=Total, group=10)) +
+  geom_line(arrow = arrow())+
+  geom_point()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  labs( x="Carrier", y="Total")+ggtitle("Total Episodes 2000-2014")
+g2
+
+```
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+
+
+```{r}
+
+ggplot(newdata1, aes(airline, Quantity, color = Episode)) +
+  geom_point()+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+```
+
+
+
+
+
+
+
