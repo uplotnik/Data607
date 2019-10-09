@@ -1,0 +1,27 @@
+
+<books>
+    <book id="1">
+        <Title>American Gods</Title>
+        <Author>American Gods</Author>
+        <Genre>Fantasy</Genre>
+        <Publisher>William Morrow</Publisher>
+       <PublishedDate>06/19/2001</PublishedDate>
+        <Pages>465</Pages>
+    </book>
+    <book id="2">
+        <Title>A Game of Thrones</Title>
+        <Author>George R. Martin</Author>
+        <Genre>Fantasy</Genre>
+        <Publisher>Bantam Spectra,Voyager Books</Publisher>
+        <PublishedDate>08/01/1996</PublishedDate>
+        <Pages>694</Pages>
+    </book>
+    <book id="3">
+        <Title>Tiny Pretty Things </Title>
+        <Author>Sona Charaipotra, Dhonielle Clayton</Author>
+        <Genre>Fantasy</Genre>
+        <Publisher>Harper Collins Publishers</Publisher>
+        <PublishedDate>05/26/2015</PublishedDate>
+        <Pages>464</Pages>
+    </book>
+</books>
