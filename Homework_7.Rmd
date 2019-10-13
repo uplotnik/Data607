@@ -1,0 +1,83 @@
+---
+title: "Assignment 7"
+author: "Uliana Plotnikova"
+date: "October 13, 2019"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: hide
+---
+
+# Library preparation
+
+```{r}
+library(XML)
+library(RJSONIO)
+library(DT)
+
+```
+
+
+Books files were manually created and saved in different formats on local device and also can be found on: 
+
+1.https://raw.githubusercontent.com/uplotnik/Data607/master/Books.html
+
+2.https://raw.githubusercontent.com/uplotnik/Data607/master/Books.xml
+
+3.https://raw.githubusercontent.com/uplotnik/Data607/master/Books.json
+
+# HTML file
+
+```{r}
+html_parsed<-htmlParse(file = "file:///C:/Users/a/Desktop/607/Books.html")
+
+html_table<-readHTMLTable(html_parsed, stringsAsFactors = FALSE)
+html_table<-html_table[[1]]
+
+
+datatable(html_table)
+
+```
+
+```{r}
+str(html_table)
+```
+
+# XML file
+
+```{r}
+xml_books <- "file:///C:/Users/a/Desktop/607/Books.xml"
+book = xmlParse(xml_books)
+xml_table <- xmlToDataFrame(book)
+datatable(xml_table)
+```
+
+```{r}
+str(xml_table)
+```
+
+# JSON file
+
+```{r}
+json_books<-fromJSON(content = "file:///C:/Users/a/Desktop/607/Books.JSON")
+
+#create data frame.
+json_table<-do.call("rbind", lapply(json_books[[1]], data.frame, stringsAsFactors = FALSE))
+
+datatable(json_table)
+
+```
+```{r}
+str(json_table)
+```
+
+# Conclusion
+
+All three files saved in different formats look identical when we view data frames using library(DT).
+However, variables in HTML and JSON files are saved as Characters (except "Pages" variable which is a Number vector in JSON), while all variables in XML file are Factors.
+
+
+
+
+
