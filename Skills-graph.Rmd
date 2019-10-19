@@ -1,0 +1,30 @@
+---
+title: "Skills-graph"
+author: "Uliana Plotnikova"
+date: "October 18, 2019"
+output: html_document
+---
+
+```{r}
+url<-"https://raw.githubusercontent.com/uplotnik/Data607/master/Skills.csv"
+x<- read.csv(url)
+```
+
+
+
+```{r}
+hard_skills <- c("R", "PYTHON", "SQL", "JAVA","PERL","C","HADOOP","APACHE","ORACLE","SCALA","ACCESS", "SAS","LINUX", "AZURE", "EXCEL","Metlab","AWS","TABLEAU","SPARK","HIVE")
+hard_skills<-filter(x, Skills %in% hard_skills)%>%
+  mutate(perc=freq/sum(freq))
+```
+
+```{r}
+ ggplot(hard_skills, aes(x = Skills, y = freq, fill = freq, label = scales::percent(perc))) + 
+    geom_col(position = 'dodge') + 
+    geom_text(position = position_dodge(width = .9),    # move to center of bars
+              vjust = -0.5,    # nudge above top of bar
+              size = 3) + 
+    scale_y_continuous(labels = scales::percent)+  theme(axis.text=element_text(angle=90))+  ggtitle("Hard Skills")
+
+
+```
