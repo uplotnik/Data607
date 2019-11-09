@@ -1,0 +1,93 @@
+---
+title: "Discussion 11"
+author: "Uliana Plotnikova"
+date: "November 8, 2019"
+output:
+    html_document
+---
+
+
+
+
+
+![](C:\Users\a\Desktop\pinterest-logo.0.1462602829.0.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#####Pinterest is one of the largest-scale recommender systems around, serving serve more than 10 billion recommendations every day. By combining the data we've amassed over the years with human curation, we've built human-centered personalization engines that can serve the right recommendation to the right person at the right moment, choosing from a pool of over 100 billion objects-all in real time.
+
+#####One of the most popular ways people find ideas on Pinterest is through Related Pins, an item-to-item recommendations system that uses collaborative filtering.Pinterest developed a scalable system that evolves with the product and people's interests, so they can surface the most relevant recommendations through Related Pins. 
+
+#**Scenario Design**
+
+##**Who are your target users?**
+##### Pinterest target audience primarily consisted of female ages 25-54. However, Pinterest recently gave an update which showcased a shift in Pinterest demographics.
+
+#####Here are some of the noteworthy numbers:
+
+##### 1 out of 2 Millennials use Pinterest every month
+##### The number of male Pinterest users has more than doubled
+##### 61% of users have discovered new brands/products from Promoted Pins
+##### 1 out of 2 users make purchases after seeing Promoted Pins
+
+
+![](C:\Users\a\Desktop\wom.jpg)
+
+
+##**What are their key goals?**
+
+#####Pinterest has absolutely everything from fashion, to sports articles, to health, to arts and crafts ideas, to recipes and everything in between. You can design your dream home, plan your next vacation andstrategize your high-class four-course meal. True, pinning can be the perfect way to spend some free time, but it can also be a great resource for daily needs and planning for the future.
+
+
+#####People use Pinterest as a Source of Inspiration because it is filled with users' favorite bookmarked ideas and products. For many Pinterest users, this interaction is part of the appeal of the site. They connect with fellow bloggers or friends by sharing pins.Many of the people on Pinterest are just enjoying downtime between work projects or unwinding at night before bed.
+
+##**How can you help them accomplish their goals?**
+
+#####The best way to help users to enjoy the website is to understand their needs. In order to do so, Pinterest is using collaborative filtering and content-based filtering. 
+#####Collaborative filtering methods work using the previous relationships between users and items; theyinfer user preferences through observing user behavior. 
+#####Content-based filtering techniques use characteristics of the users and items (e.g.  match items withcertain characteristics based on users' preferences).  One example is PRES (PersonalizedRecommenderSystem), a content-based filtering system for suggesting small articles about home improvements. 
+
+
+![](C:\Users\a\Desktop\im56.jpg)
+
+
+#**Reverse Engineer**
+
+
+#####Pinterest used to count Each pin (or image/link), and its membership in users' boards, is modeled a graph of pins and boards. The simplest way, then, to recommend other images is to examine the pins and boards that are often saved alongside the original 
+
+
+#####Recently Pinterest has implemented a 'random walk service called Pixie,' which 'effectively computes Personalized PageRank on' the graph. Another version uses something called Pin2Vec, which makes use of deep learning.
+#####Pinterest today is announcing that it's now using a type of artificial intelligence called deep learning to recommend Related Pins, one of the most important features of its app for saving images and other content to boards. Related Pins, which appear below pins on Pinterest's web and mobile apps, are what they sound like - pins that Pinterest thinks are related to the current one.
+
+#**Improvements**
+#####Honestly, I don't know how Pinterest can improve my experience. I personally like and enjoy using this website and recommend it all young women who are looking for fresh ideas, inspiration or who just want to spent some time with pleasure and relaxation..   
+
+![](C:\Users\a\Desktop\8.jpg)
+
+
+Source:
+https://www.redmoxy.com/is-pinterests-target-audience-changing
+
+
+https://labs.pinterest.com/user/themes/pin_labs/assets/paper/p2p-www17.pdf
+
