@@ -1,0 +1,234 @@
+---
+title: "Data 607 Assignment 12 - NoSQL Data Store"
+author: "Uliana Plotnikova"
+date: "November 17, 2019"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    
+---
+
+# Assignment 
+**NoSQL Data Store**
+
+*Take information from a relational database and migrate it to a NoSQL database of your own choosing. For the relational database, you might use the flights database, the tb database, the "data skills" database your team created for Project 3, or another database of your own choosing or creation.
+For the NoSQL database, you may use MongoDB (which we introduced in week 7), Neo4j, or another NoSQL database of your choosing.
+Migration process needs to be reproducible. R code is encouraged, but not required. Briefly describe the advantages and disadvantages of storing the data in a relational database vs. your NoSQL database.*
+
+*For this assignment I will use "nycflights13" database that was previously imported into PostgreSQL. For NoSQLdatabase I will use MongoDB*
+
+
+# Prepare Library
+```{r setup, message = FALSE}
+suppressWarnings({library(mongolite)})
+suppressWarnings({library(RPostgreSQL)})
+suppressWarnings({library(dplyr)})
+suppressWarnings({library(tidyverse)})
+
+```
+
+
+
+
+# Create PostgreSQL connection
+```{r}
+drv <- dbDriver("PostgreSQL")
+```
+
+
+```{r}
+con <- dbConnect(
+  dbDriver('PostgreSQL'),
+  dbname = 'Flights',
+  host = 'localhost',
+  port = 5432,
+  user = 'postgres',
+  password = 'Ylua4786'
+)
+
+```
+
+## Load tables into R data frames
+```{r}
+airlines <- dbGetQuery(con, "SELECT * FROM airlines")
+airports <- dbGetQuery(con, "SELECT * FROM airports ")
+flights <- dbGetQuery(con, "SELECT * FROM flights  ")
+planes <- dbGetQuery(con, "SELECT * FROM planes ")
+weather <- dbGetQuery(con, "SELECT * FROM weather ")
+
+```
+
+
+```{r}
+head(airlines,3)
+```
+
+
+```{r}
+head(airports,3)
+
+```
+
+
+```{r}
+
+head(flights,3)
+
+```
+
+
+
+
+```{r}
+
+head(planes,3)
+```
+
+
+```{r}
+
+head(weather,3)
+```
+
+
+```{r}
+dbDisconnect(con) 
+```
+
+
+
+# Create connection and Insert data into MongoDB 
+
+
+##Airlines
+
+
+
+```{r}
+mongo_airlines <- mongo(collection = "Airlines")
+mongo_airlines$insert(airlines)
+```
+
+
+```{r}
+head(mongo_airlines$find())
+```
+
+
+
+
+
+##Airports
+
+
+```{r}
+mongo_aiport <- mongo(collection = "Airports")
+mongo_aiport$insert(airports)
+```
+
+```{r}
+head(mongo_aiport$find())
+
+```
+##Flights
+
+
+```{r}
+mongo_flights <- mongo(collection = "Flight")
+mongo_flights$insert(flights)
+
+```
+
+
+
+
+## Weather
+
+```{r}
+mongo_wth <- mongo(collection = "Weather")
+mongo_wth$insert(weather)
+```
+
+
+```{r}
+head(mongo_wth$find())
+
+```
+## Airplanes
+
+```{r}
+mongo_plns <- mongo(collection = "Airplanes")
+mongo_plns$insert(planes)
+```
+
+
+```{r}
+head(mongo_plns$find())
+
+```
+
+## Perform Basic queries 
+
+Let's see what the data looks like by displaying one record
+
+```{r}
+head(mongo_flights$iterate()$one() )
+```
+
+How many distinct "Carriers" do we have in Flight collection?
+
+```{r}
+length(mongo_flights$distinct("carrier"))
+```
+
+
+Choose all flights on January 1
+```{r}
+jan1 <- mongo_flights$find('{"month":1, "day":1}')
+head(jan1,10)
+```
+
+
+How many flights were on January 1 ?
+```{r}
+mongo_flights$count('{"month":1, "day":1}')
+```
+
+
+
+
+How many flights were on December 31 ?
+```{r}
+mongo_flights$count('{"month":12, "day":31}')
+```
+Sort by distance
+
+```{r}
+Dec31 <- mongo_flights$find('{"month":12,"day":31}', sort='{"distance":-1}')
+head(Dec31,10)
+```
+
+
+```{r}
+mongo_flights$aggregate('[{"$group":{"_id":"$carrier", "count": {"$sum":1}, "average":{"$avg":"$distance"}}}]')%>% 
+  ggplot(aes(x=reorder(`_id`,count),y=count))+geom_bar(stat="identity")+coord_flip()+xlab("Carriers")+ theme_bw() + ggtitle("Average Distance")
+
+```
+
+
+#Conclusion
+
+##Disadvantages of NoSQL database
+
+There are many important features that have not yet been implemented.
+Simple queries require some programming knowledge.
+
+##Advantages of NoSQL databases
+
+NoSQL databases can be easily installed in cheap commodity hardware clusters as transaction and data volumes increase. This means that you can process and store more data at much less cost. 
+
+NoSQL databases require much less hands-on management, with data distribution and auto repair capabilities, simplified data models and fewer tuning and administration requirements. However, in practice, someone will always be needed to take care of performance and availability of databases.
+
+https://www.hadoop360.datasciencecentral.com/blog/advantages-and-disadvantages-of-nosql-databases-what-you-should-k
+
