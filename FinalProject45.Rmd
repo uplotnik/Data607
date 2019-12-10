@@ -1,0 +1,480 @@
+---
+title: 'Final Project 
+"Top 10 Causes of Death in the USA, 1999-2017" '
+author: "Uliana Plotnikova"
+date: "December 11, 2019"
+output: 
+    prettydoc::html_pretty:
+    theme: cayman
+    highlight: github
+    math: katex
+    code_folding: hide
+---
+
+
+
+
+
+
+
+![Picture](\Users\a\Desktop\apple.jpg)
+
+# Introduction
+
+In the past 100 years, Americans have gained approximately 25 more years of expectancy. These gains were due to significant declines in mortality that occurred as acute infectious diseases were replaced by chronic diseases as the predominant cause of morbidity and mortality. However, 2017 was the third year in a row where U.S. life expectancy fell, a rare event that has only occurred three times in the last century. One other three-year decline occurred in 1916, 1917 and 1918, when the worst flu pandemic in modern history eliminated nearly 7% of the US population.
+My initial intention was to analyze mortality only in New York state, then I decided to explore death causes in the entire United States. Since I work in health care environment I took advantage to analyse Leading Causes of Death in United States data in order to expand my knowledge and skills.  
+
+
+This dataset is taken from Data.gov presents the age-adjusted death rates for the 10 leading causes of death in the United States beginning in 1999. Data are based on information from all resident death certificates filed in the 50 states and the District of Columbia using demographic and medical characteristics. Age-adjusted death rates (per 100,000 population) are based on the 2000 U.S. standard population.Age-adjusted death rates are useful when comparing different populations because they remove the potential bias that can occur when the populations being compared have different age structures. 
+
+
+
+
+
+# Data Acquisition
+
+```{r message=FALSE}
+#Load necessary libraries
+suppressWarnings({library(mongolite)})
+suppressWarnings({library(ggthemes)})
+suppressWarnings({library(gganimate)})
+suppressWarnings({library(magick)})
+suppressWarnings({library(gapminder)})
+suppressWarnings({library(ggplot2)})
+suppressWarnings({library(dplyr)})
+suppressWarnings({library(lubridate)})
+suppressWarnings({library(stringr)})
+suppressWarnings({library(plotrix)})
+suppressWarnings({library(reshape)})
+suppressWarnings({library(knitr)})
+suppressWarnings({library(tidyverse)})
+suppressWarnings({library(kableExtra)})
+suppressWarnings({library(usmap)})
+
+
+```
+
+
+
+
+```{r}
+url <- "https://raw.githubusercontent.com/uplotnik/FinalProject607/master/USA%20leading%20Causes%20of%20death.csv"
+datasetx <- read.csv(url)
+head(datasetx)
+```
+
+
+## Read Data from MongoDB
+```{r}
+mongo_db <- mongo(collection = "Causes of Deaths in USA")
+mongo_db$insert(datasetx)
+```
+
+```{r}
+head(mongo_db$find())
+```
+
+## Data Preparation
+
+```{r }
+datasetx <- read.csv(url,header = TRUE, na.strings=".")
+datasetx<-distinct(datasetx)
+datasetx<-datasetx[,-2]
+kable(head(datasetx))
+```
+
+
+
+
+# Data Analysis
+
+##Exploratory Analysis
+
+```{r}
+dim(datasetx)
+```
+
+
+```{r}
+str(datasetx)
+```
+
+```{r}
+summary(datasetx)
+```
+
+
+
+
+# Total Number of Death by Year
+
+### Filter data by All Causes in entire United States
+
+```{r}
+USA<-filter(datasetx, datasetx$State == "United States")
+all_causes_usa<-filter(USA, USA$Cause.Name == "All causes")
+kable(head((all_causes_usa),10))
+
+```
+
+
+
+### Add Death Proportion of each year  
+```{r}
+yearlydeath<- USA %>%
+    group_by(Year) %>%
+    summarise(avg_Deaths = mean(Deaths), 
+              min_Deaths = min(Deaths),
+              max_Deaths = max(Deaths),
+              total_deaths= sum(Deaths))%>%
+         mutate(total_deaths_prop = prop.table(total_deaths))%>%
+  arrange(desc(Year))
+kable(head(yearlydeath,5))
+```
+
+
+### Find Ave, Min, Max and Total Death 1999-2017
+
+
+
+```{r}
+total<-yearlydeath %>%
+  summarise(avg_deaths_1999_2017 = mean(avg_Deaths),
+            min_deaths_1999_2017 = min(min_Deaths),
+              max_deaths_1999_2017 = max(max_Deaths),
+            total_deaths_1999_2017= sum(total_deaths))
+kable(total)
+```
+
+
+### When was the Max and Min number of Deaths?
+
+
+
+
+```{r}
+max<-all_causes_usa %>% slice(which.max(Deaths))
+kable(max)
+```
+
+```{r}
+min<-all_causes_usa%>% slice(which.min(Deaths))
+kable(min)
+```
+
+The maximum Number of deaths: 2,813,503 is registered in 2017 and the Minimum Number: 2,391,399 is registered in 1999.
+
+### Visualization
+
+
+```{r}
+mortality<-ggplot(data=yearlydeath, aes(x=Year, y=total_deaths_prop, group=10)) +
+  geom_line(arrow = arrow())+
+  geom_point()+
+  geom_text(aes(label = round(total_deaths_prop,3)),
+            vjust = "inward", hjust = "inward",
+            show.legend = FALSE)+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  labs( x="Year", y="Proportion")+ggtitle("Proportion of total Deaths 1999-2017 - All causes ")
+mortality
+```
+
+###  Death Rate change  between years
+
+```{r}
+pct_change <- all_causes_usa %>%
+   group_by(Cause.Name) %>% 
+  mutate(pct_change = (Deaths/lead(Deaths)-1) * 100)
+data_wide1<- pct_change %>% 
+  select(1:4,6)
+data_wide2<-spread(data_wide1, State, Deaths)
+kable(head(data_wide2))
+```
+```{r}
+perc_change<-ggplot(data=data_wide2, aes(x=Year, y=pct_change, group=10)) +
+  geom_line(arrow = arrow())+
+  geom_point()+
+  geom_text(aes(label = round(pct_change, 1)),
+            vjust = "inward", hjust = "inward",
+            show.legend = FALSE)+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  labs( x="Year", y="Percentage")+ggtitle("Death Percentage change between Years ")
+perc_change
+```
+
+The number of death are going up! But the population of US has been growing.In order to see more accurate data, we need to check age-adjusted death rate for the total population. 
+
+## Age Adjusted Death Rate
+
+AGE-ADJUSTED DEATH RATE is a death rate that controls for the effects of differences in population age distributions. When comparing across geographic areas, some method of age- adjusting is typically used to control for the influence that different population age distributions might have on health event rates.
+
+```{r}
+g3<-ggplot(data=all_causes_usa, aes(x=Year, y=Age.adjusted.Death.Rate, group=10)) +
+  geom_line(arrow = arrow())+
+  geom_point()+
+  geom_text(aes(label = round(Age.adjusted.Death.Rate, 1)),
+            vjust = "inward", hjust = "inward",
+            show.legend = FALSE)+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  labs( x="Year", y="Deaths")+ggtitle("Age Adjusted Death Rate 1999-2017")
+g3
+```
+Age Adjusted Death rate decreased on 16% from 1999 to 2017.
+
+## Mortality vs Age Adjusted Death Rate
+
+```{r}
+states<-datasetx[!grepl('United States',datasetx$State),]
+all_causes_states<-filter(states, states$Cause.Name == "All causes")
+```
+
+
+
+
+  
+```{r}
+p <- ggplot(
+  all_causes_states, 
+  aes(x = Age.adjusted.Death.Rate, y=Deaths,  colour = State)
+  ) +
+  geom_point(show.legend = FALSE, alpha = 0.7) +
+  scale_color_viridis_d() +
+  scale_size(range = c(2, 12)) +
+  scale_x_log10() +
+  labs(x = "Age.adjusted.Death.Rate", y = "Deaths")
+```
+
+
+```{r}
+p + transition_time(Year)+
+  labs(title = "Year: {frame_time}")+
+    shadow_mark(alpha = 0.3, size = 0.5)
+```
+
+
+The decline in the age-adjusted death rate to a record low value for the United States is consistent with long-term trends in mortality.
+
+
+
+
+
+
+# Leading Causes of Death in USA 1999-2017
+
+```{r}
+dataset1<-USA[!grepl('All causes',USA$Cause.Name),]
+
+```
+
+```{r}
+dataset_wide<-dataset1%>%select(-State, -Age.adjusted.Death.Rate)
+dataset_wide1<-spread(dataset_wide, Year, Deaths)
+kable(head(dataset_wide1))%>%
+    kable_styling(bootstrap_options = "striped", full_width = F)%>%
+    row_spec(5, bold = T, color = "white", background = "orange")%>%
+  row_spec(2, bold = T, color = "white", background = "orange")
+
+```
+
+
+```{r}
+ggplot(aes(x =  reorder(Cause.Name,-Deaths), y = Deaths), data = dataset1) + 
+  geom_bar(stat = 'identity') +
+  ylab('Total Deaths') +
+  xlab('') +
+  ggtitle('Causes of Deaths 1999-2017 in USA') +
+  theme_tufte() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+
+
+```{r}
+  ggplot(dataset1, aes(x= Year,y=Deaths)) + 
+  geom_bar(aes(fill = reorder(Cause.Name,Deaths)), position ="dodge",
+  stat = "identity") +
+  ggtitle("Top Ten Causes of Death by Year") +
+  ylab(label = "Deaths" )+
+  scale_fill_discrete(name = "Cause of Death")
+```
+
+```{r}
+pie<-dataset1
+pie1<-aggregate(pie$Deaths, by=list(Cause=pie$Cause), FUN=sum)
+pie2<-pie1%>% mutate(Perc=x/sum(x))
+```
+
+
+
+
+```{r}
+ slices <- c(1494816, 10843644, 2594927, 1399943, 12222640,1094641, 858613,2726523,697016,2347820) 
+ lbls <- c("Alzheimer's disease	", "Cancer", "CLRD", "Diabetes", "Heart disease"," Influenza and pneumonia	", "Kidney disease", "Stroke", "Suicide", "Unintentional injuries")
+ pct <- round(slices/sum(slices)*100)
+ lbls <- paste(lbls, pct) # add percents to labels 
+ lbls <- paste(lbls,"%",sep="") # ad % to labels 
+ pie3D(slices,labels = lbls,explode = 0.3, col=rainbow(length(lbls)),
+    main="Causes of Mortality 1999-2017")
+```
+
+
+
+
+```{r}
+p <- ggplot(
+  dataset1,
+  aes(Year, Deaths, group = Cause.Name, color = factor(Cause.Name))
+  ) +
+  geom_line() +
+  scale_color_viridis_d() +
+  labs(x = "Year", y = "Deaths") +
+  theme(legend.position = "top")
+
+```
+
+
+```{r}
+p + geom_point(aes(group = seq_along(Year))) +
+  transition_reveal(Year)
+```
+
+
+
+# Mortality by State
+
+##Filter by all states and all causes
+
+```{r}
+states<-datasetx[!grepl('United States',datasetx$State),]
+
+```
+
+
+```{r}
+all_causes_states<-filter(states, states$Cause.Name == "All causes")
+head(all_causes_states)%>%arrange(desc(Deaths))
+```
+## Age Adjusted Death Rate for each state 1999-2017
+
+```{r}
+dataset_wide_state<-all_causes_states%>%select(-Cause.Name, -Deaths)
+dataset_wide_state1<-spread(dataset_wide_state, Year, Age.adjusted.Death.Rate)
+kable(head(dataset_wide_state1))%>%
+    kable_styling(bootstrap_options = "striped", full_width = F)
+```
+
+
+## Avg, Min, Max Age Adjusted Death Rate for each State 
+
+```{r}
+statedeath<- all_causes_states %>%
+    group_by(State) %>%
+    summarise(Avg_Rate = mean(Age.adjusted.Death.Rate), 
+              Min_Rate = min(Age.adjusted.Death.Rate),
+              Max_Rate = max(Age.adjusted.Death.Rate)) %>%
+              
+  arrange(State)
+kable(head(statedeath,5))
+```
+## When was the higest/lowest death rate?
+```{r}
+maxrate<-all_causes_states %>% slice(which.max(Age.adjusted.Death.Rate))
+kable(maxrate)
+```
+
+
+```{r}
+minrate<-all_causes_states %>% slice(which.min(Age.adjusted.Death.Rate))
+kable(minrate)
+```
+
+
+```{r}
+ggplot(aes(x =  reorder(State,-Age.adjusted.Death.Rate), y = Age.adjusted.Death.Rate), data = all_causes_states) + 
+  geom_bar(stat = 'identity') +
+  ylab('Total Deaths') +
+  xlab('') +
+  ggtitle('Mortality by State 1999-2017') +
+  theme_tufte() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+The five states with the highest age-adjusted death rates were Missisipi, West Virginia, Alabama and Louisiana.
+
+
+# Statistical Analysis
+
+It is important to remember that age adjusted rates are not the actual rates of death or disease in the population - those are called "crude rates." Sometimes, health statistics are used to compare how healthy two different groups of people are, or how healthy a certain group is during two different time periods. Since older people are more likely to get ill, and younger people are more likely to injure themselves, age adjustment can make studies more accurate.
+
+```{r}
+d <-all_causes_usa
+fit <- lm(Age.adjusted.Death.Rate ~ Deaths, data = d) # fit the model
+d$predicted <- predict(fit)   # Save the predicted values
+d$residuals <- residuals(fit) # Save the residual values
+ggplot(d, aes(x = Deaths, y = Age.adjusted.Death.Rate)) +
+  geom_smooth(method = "lm", se = FALSE, color = "lightgrey") +     # regression line  
+  geom_segment(aes(xend = Deaths, yend = predicted), alpha = .2) +      # draw line from point to line
+  geom_point(aes(color = abs(residuals), size = abs(residuals))) +  # size of the points
+  scale_color_continuous(low = "green", high = "red") +             # colour of the points mapped to residual size - green smaller, red larger
+  guides(color = FALSE, size = FALSE) +                             # Size legend removed
+  geom_point(aes(y = predicted), shape = 1) +
+  theme_bw()
+```
+
+
+```{r}
+summary(fit)
+```
+
+Looking at the summary, it has p-value of  0.0006895, which indicates that there is statistically significant relationship between the two variables. 
+
+
+
+
+```{r}
+ggplot(data=fit, aes(y=fit$residuals, x=Deaths)) +
+  geom_point(alpha=.25, color='blue') +
+  geom_abline(slope=0, 
+                intercept=0, color='red', size=1, alpha=.25) +
+  ylab("Residuals") +
+  xlab("Deaths") +
+  ggtitle("Residual Plot")
+```
+ 
+ 
+ Points in a residual plot are randomy dispersed around the horizontal axis, meaning that linear regression model is appropriate for the data.
+
+
+```{r}
+ggplot(data=fit, aes(x=fit$residuals)) +
+  geom_histogram(bins = 12, alpha=.5) +
+  ggtitle("Histogram of Residuals")
+```
+
+```{r}
+qqnorm(fit$residuals)
+qqline(fit$residuals)
+```
+
+
+
+# Conclusion
+
+ Based on the analysis of ten leading death causes in USA we can conclude following:
+ There are two leading causes: Heart Disease 34% and Cancer 30%. 
+ The highest death rate was registered in 2017 and the lowest in 1999. 
+ Mississippi is the state with the higest mortality rate and Hawaii with the lowest rate.
+ The highest percentage of deaths number change was between 2004 and 2005 years
+ Age Adjusted Death Rate fall down from 879.6 in 1999 to 731.9 in 2017 (16%) proving the statement that life expectancy in general increased.
+
+-----------------
+
+
+
+
+
+##### Data Sources and References 
+1.https://catalog.data.gov/dataset/age-adjusted-death-rates-for-the-top-10-leading-causes-of-death-united-states-2013
+2.https://healthmetrics.heart.org/us-life-expectancy-drops-for-third-year-in-a-row-what-we-know-and-dont-know-from-the-2017-cdc-mortality-report
+3.https://www.cdc.gov/nchs/nvss/deaths.htm
